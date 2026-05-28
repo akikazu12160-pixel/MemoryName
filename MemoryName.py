@@ -6,6 +6,7 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = "memoryname-secret-key-2024"
 
+
 # --- SQLite 接続 ---
 def get_db():
     conn = sqlite3.connect("people.db")
@@ -330,6 +331,11 @@ def get_records():
     rows = c.fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+
+    # gunicorn用DB初期化
+with app.app_context():
+    init_db()
 
 if __name__ == "__main__":
     init_db()
