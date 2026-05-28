@@ -1,0 +1,51 @@
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; font-family: sans-serif; background: #f9f9f7; color: #1a1a1a; }
+.tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 1.5rem; }
+.tab-btn { padding: 8px 20px; font-size: 15px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: #666; margin-bottom: -1px; }
+.tab-btn.active { color: #1a1a1a; border-bottom: 2px solid #1a1a1a; font-weight: 500; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; }
+.drop-zone { border: 1.5px dashed #ccc; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; background: #f5f5f5; }
+.drop-zone.over { background: #e8f0fe; border-color: #4a90d9; }
+.drop-label { font-size: 14px; color: #666; margin: 0; }
+.field-label { font-size: 13px; color: #666; margin: 0 0 6px; }
+.field-group { margin-bottom: 14px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.btn { padding: 8px 18px; font-size: 14px; cursor: pointer; background: #fff; border: 1px solid #ccc; border-radius: 8px; color: #1a1a1a; white-space: nowrap; }
+.btn:hover { background: #f5f5f5; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.btn-primary:hover { opacity: 0.85; background: #1a1a1a; }
+.preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.preview-label { font-size: 12px; color: #666; margin: 0 0 4px; text-align: center; }
+.preview-canvas { width: 100%; display: block; border-radius: 8px; border: 1px solid #e5e5e5; }
+.shape-info { font-size: 13px; color: #666; margin-top: 8px; }
+.ok-msg { font-size: 14px; color: #2e7d32; padding: 8px 0; display: none; }
+.score-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 1rem; flex-wrap: wrap; }
+.score-block { text-align: center; }
+.score-num { font-size: 28px; font-weight: 500; }
+.score-lbl { font-size: 12px; color: #666; }
+.game-area { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+.game-canvas-wrap { position: relative; }
+.game-label { font-size: 13px; color: #666; text-align: center; margin-bottom: 4px; }
+.game-canvas-wrap canvas { width: 100%; display: block; border-radius: 8px; border: 1px solid #e5e5e5; cursor: crosshair; }
+.result-box { text-align: center; padding: 1.5rem; }
+.result-big { font-size: 36px; font-weight: 500; margin-bottom: 8px; }
+.result-sub { font-size: 15px; color: #666; margin-bottom: 1.5rem; }
+.hint-text { font-size: 14px; color: #666; margin: 0 0 8px; }
+.stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card { background: #f5f5f5; border-radius: 10px; padding: 14px; text-align: center; }
+.stat-num { font-size: 26px; font-weight: 500; }
+.stat-lbl { font-size: 12px; color: #666; margin-top: 2px; }
+.chart-title { font-size: 14px; font-weight: 500; margin: 0 0 12px; color: #444; }
+.person-card { text-align: center; }
+.delete-btn { margin-top: 4px; padding: 4px 12px; font-size: 12px; cursor: pointer; background: #fff; border: 1px solid #e57373; border-radius: 6px; color: #e57373; }
+.delete-btn:hover { background: #fdecea; }
+.thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e5e5; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 12px; }
+
+/* ログイン画面 */
+#login-screen { display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f9f9f7; }
+.login-card { background:#fff; border:1px solid #e5e5e5; border-radius:16px; padding:32px 28px; width:100%; max-width:360px; }
+.login-card h1 { font-size:22px; margin:0 0 24px; text-align:center; }

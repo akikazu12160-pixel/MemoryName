@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名前あてゲーム</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>名前あてゲーム</h1>
+    <div class="field-group">
+      <p class="field-label">ユーザー名</p>
+      <input type="text" id="login-username" placeholder="ユーザー名">
+    </div>
+    <div class="field-group">
+      <p class="field-label">パスワード</p>
+      <input type="password" id="login-password" placeholder="パスワード">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="login()">ログイン</button>
+    <p id="login-error" style="color:#e57373; font-size:13px; margin-top:8px;"></p>
+  </div>
+</div>
+
+<!-- メイン画面 -->
+<div id="main-screen" style="display:none;">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h1 style="margin:0;">名前あてゲーム</h1>
+      <div style="text-align:right;">
+        <p id="header-user" style="margin:0; font-size:13px; color:#666;"></p>
+        <button class="btn" style="font-size:12px; padding:4px 10px;" onclick="logout()">ログアウト</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tab-bar"></div>
+
+    <!-- 利用者・家族：写真登録 -->
+    <div id="tab-register" class="tab-panel">
+      <div class="card">
+        <h2>写真を登録</h2>
+        <div class="form-row">
+          <input type="text" id="person-name" placeholder="名前を入力">
+          <input type="file" id="person-image" accept="image/*">
+          <button class="btn btn-primary" onclick="addPerson()">追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 登録一覧 -->
+    <div id="tab-list" class="tab-panel">
+      <div class="card">
+        <h2>登録一覧</h2>
+        <!-- 管理者用：ユーザー選択 -->
+        <div id="admin-user-select" style="display:none; margin-bottom:12px;">
+          <p class="field-label">表示するユーザー</p>
+          <select id="list-user-select" onchange="loadPeople()" style="padding:6px; border-radius:6px; border:1px solid #ccc;">
+            <option value="">全員</option>
+          </select>
+        </div>
+        <div id="registered-list" class="grid"></div>
+      </div>
+    </div>
+
+    <!-- 管理者：写真登録 -->
+    <div id="tab-admin-register" class="tab-panel">
+      <div class="card">
+        <h2>写真を登録（管理者）</h2>
+        <div class="field-group">
+          <p class="field-label">登録先ユーザー</p>
+          <select id="admin-owner-select" style="padding:6px; border-radius:6px; border:1px solid #ccc; margin-bottom:10px;">
+          </select>
+        </div>
+        <div class="form-row">
+          <input type="text" id="admin-person-name" placeholder="名前を入力">
+          <input type="file" id="admin-person-image" accept="image/*">
+          <button class="btn btn-primary" onclick="adminAddPerson()">追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 管理者：ユーザー管理 -->
+    <div id="tab-users" class="tab-panel">
+      <div class="card">
+        <h2>ユーザー管理</h2>
+        <div style="display:grid; gap:8px; margin-bottom:16px;">
+          <input type="text" id="new-username" placeholder="ユーザー名">
+          <input type="password" id="new-password" placeholder="パスワード">
+          <select id="new-role" onchange="toggleLinkedUser()" style="padding:6px; border-radius:6px; border:1px solid #ccc;">
+            <option value="user">利用者</option>
+            <option value="family">家族</option>
+            <option value="admin">管理者</option>
+          </select>
+          <div id="linked-user-group" style="display:none;">
+            <p class="field-label">紐づける利用者</p>
+            <select id="new-linked-user" style="padding:6px; border-radius:6px; border:1px solid #ccc; width:100%;"></select>
+          </div>
+          <button class="btn btn-primary" onclick="createUser()">ユーザー作成</button>
+        </div>
+        <div id="user-list"></div>
+      </div>
+    </div>
+
+    <!-- ゲーム -->
+    <div id="tab-game" class="tab-panel">
+      <div class="card">
+        <h2>ゲーム</h2>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="start-btn" class="btn btn-primary" onclick="startMemoryGame()">ゲーム開始</button>
+          <button id="next-btn" class="btn btn-primary" onclick="startMemoryGame()" style="display:none;">次のゲーム</button>
+        </div>
+        <p id="memory-question" style="font-size:16px; font-weight:bold; margin-top:12px;"></p>
+        <p id="memory-countdown" style="font-size:20px; font-weight:bold; color:#e57373;"></p>
+        <div id="memory-grid" class="grid"></div>
+        <p id="memory-result" style="font-size:20px; font-weight:bold;"></p>
+      </div>
+    </div>
+
+    <!-- 記録 -->
+    <div id="tab-records" class="tab-panel">
+      <div class="card">
+        <h2>ゲーム記録</h2>
+        <div id="records-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="MemoryName.js"></script>
+</body>
+</html>
