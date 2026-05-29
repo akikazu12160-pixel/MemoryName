@@ -1,16 +1,17 @@
 from flask import Flask, request, jsonify, send_from_directory, session
-import sqlite3
 import os
 from functools import wraps
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-app.secret_key = "memoryname-secret-key-2024"
+app.secret_key = os.environ.get("SECRET_KEY", "memoryname-secret-key-2024")
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# --- SQLite 接続 ---
+# --- DB接続 ---
 def get_db():
-    conn = sqlite3.connect("people.db")
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return conn
 
 # --- DB初期化 ---
@@ -20,7 +21,7 @@ def init_db():
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         role TEXT NOT NULL CHECK(role IN ('user', 'admin', 'family')),
@@ -30,16 +31,16 @@ def init_db():
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS people (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT,
-        image BLOB,
+        image BYTEA,
         owner_user_id INTEGER NOT NULL
     )
     """)
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS game_records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         player_user_id INTEGER NOT NULL,
         correct INTEGER NOT NULL,
         total INTEGER NOT NULL,
@@ -47,10 +48,9 @@ def init_db():
     )
     """)
 
-    # デフォルト管理者アカウント
     c.execute("SELECT id FROM users WHERE username = 'admin'")
     if not c.fetchone():
-        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+        c.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
                   ('admin', 'admin123', 'admin'))
 
     conn.commit()
@@ -103,7 +103,7 @@ def login():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    c.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
     user = c.fetchone()
     conn.close()
 
@@ -142,7 +142,7 @@ def me():
     })
 
 # =====================
-# ユーザー管理API（管理者のみ）
+# ユーザー管理API
 # =====================
 
 @app.route("/api/users", methods=["GET"])
@@ -170,10 +170,11 @@ def create_user():
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute("INSERT INTO users (username, password, role, linked_user_id) VALUES (?, ?, ?, ?)",
+        c.execute("INSERT INTO users (username, password, role, linked_user_id) VALUES (%s, %s, %s, %s)",
                   (username, password, role, linked_user_id))
         conn.commit()
-    except sqlite3.IntegrityError:
+    except Exception:
+        conn.rollback()
         conn.close()
         return jsonify({"error": "そのユーザー名は既に使われています"}), 400
     conn.close()
@@ -184,7 +185,7 @@ def create_user():
 def delete_user(user_id):
     conn = get_db()
     c = conn.cursor()
-    c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    c.execute("DELETE FROM users WHERE id = %s", (user_id,))
     conn.commit()
     conn.close()
     return jsonify({"message": "削除しました"})
@@ -194,7 +195,6 @@ def delete_user(user_id):
 # =====================
 
 def get_target_user_id():
-    """写真の対象ユーザーIDを返す（家族は紐づけ先、それ以外は自分）"""
     role = session.get('role')
     if role == 'family':
         return session.get('linked_user_id')
@@ -210,7 +210,6 @@ def add_person():
     if not name or not image:
         return jsonify({"error": "name and image required"}), 400
 
-    # 管理者は対象ユーザーを指定できる
     if role == 'admin':
         owner_id = request.form.get("owner_user_id", session['user_id'])
     else:
@@ -222,8 +221,8 @@ def add_person():
     image_data = image.read()
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT INTO people (name, image, owner_user_id) VALUES (?, ?, ?)",
-              (name, image_data, owner_id))
+    c.execute("INSERT INTO people (name, image, owner_user_id) VALUES (%s, %s, %s)",
+              (name, psycopg2.Binary(image_data), owner_id))
     conn.commit()
     conn.close()
     return jsonify({"message": "saved"})
@@ -236,15 +235,14 @@ def get_people():
     c = conn.cursor()
 
     if role == 'admin':
-        # 管理者は全員 or 特定ユーザー指定
         target_id = request.args.get("owner_user_id")
         if target_id:
-            c.execute("SELECT id, name, owner_user_id FROM people WHERE owner_user_id = ?", (target_id,))
+            c.execute("SELECT id, name, owner_user_id FROM people WHERE owner_user_id = %s", (target_id,))
         else:
             c.execute("SELECT id, name, owner_user_id FROM people")
     else:
         owner_id = get_target_user_id()
-        c.execute("SELECT id, name, owner_user_id FROM people WHERE owner_user_id = ?", (owner_id,))
+        c.execute("SELECT id, name, owner_user_id FROM people WHERE owner_user_id = %s", (owner_id,))
 
     rows = c.fetchall()
     conn.close()
@@ -255,14 +253,14 @@ def get_people():
 def get_image(person_id):
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT image, owner_user_id FROM people WHERE id = ?", (person_id,))
+    c.execute("SELECT image FROM people WHERE id = %s", (person_id,))
     row = c.fetchone()
     conn.close()
 
     if row is None:
         return "Not found", 404
 
-    return row["image"], 200, {"Content-Type": "image/jpeg"}
+    return bytes(row["image"]), 200, {"Content-Type": "image/jpeg"}
 
 @app.route("/api/delete_person/<int:person_id>", methods=["DELETE"])
 @login_required
@@ -270,19 +268,18 @@ def delete_person(person_id):
     role = session.get('role')
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT owner_user_id FROM people WHERE id = ?", (person_id,))
+    c.execute("SELECT owner_user_id FROM people WHERE id = %s", (person_id,))
     row = c.fetchone()
 
     if row is None:
         conn.close()
         return jsonify({"error": "見つかりません"}), 404
 
-    # 管理者か所有者のみ削除可能
     if role != 'admin' and row['owner_user_id'] != get_target_user_id():
         conn.close()
         return jsonify({"error": "権限がありません"}), 403
 
-    c.execute("DELETE FROM people WHERE id = ?", (person_id,))
+    c.execute("DELETE FROM people WHERE id = %s", (person_id,))
     conn.commit()
     conn.close()
     return jsonify({"message": "deleted"})
@@ -301,7 +298,7 @@ def save_record():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("INSERT INTO game_records (player_user_id, correct, total) VALUES (?, ?, ?)",
+    c.execute("INSERT INTO game_records (player_user_id, correct, total) VALUES (%s, %s, %s)",
               (player_id, correct, total))
     conn.commit()
     conn.close()
@@ -324,7 +321,7 @@ def get_records():
         c.execute("""
             SELECT r.id, u.username, r.correct, r.total, r.played_at
             FROM game_records r JOIN users u ON r.player_user_id = u.id
-            WHERE r.player_user_id = ?
+            WHERE r.player_user_id = %s
             ORDER BY r.played_at DESC LIMIT 50
         """, (session['user_id'],))
 
@@ -332,8 +329,7 @@ def get_records():
     conn.close()
     return jsonify([dict(r) for r in rows])
 
-
-    # gunicorn用DB初期化
+# gunicorn用DB初期化
 with app.app_context():
     init_db()
 
