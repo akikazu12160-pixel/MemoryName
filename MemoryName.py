@@ -95,6 +95,28 @@ def static_files(filename):
 # 認証API
 # =====================
 
+@app.route("/api/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "入力が不正です"}), 400
+
+    conn = get_db()
+    c = conn.cursor()
+    try:
+        c.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
+                  (username, password, "user"))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        conn.close()
+        return jsonify({"error": "そのユーザー名は既に使われています"}), 400
+    conn.close()
+    return jsonify({"message": "登録しました"})
+
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json()
