@@ -12,16 +12,45 @@
 <div id="login-screen">
   <div class="login-card">
     <h1>名前あてゲーム</h1>
-    <div class="field-group">
-      <p class="field-label">ユーザー名</p>
-      <input type="text" id="login-username" placeholder="ユーザー名">
+
+    <!-- ログインフォーム -->
+    <div id="login-form">
+      <div class="field-group">
+        <p class="field-label">ユーザー名</p>
+        <input type="text" id="login-username" placeholder="ユーザー名">
+      </div>
+      <div class="field-group">
+        <p class="field-label">パスワード</p>
+        <input type="password" id="login-password" placeholder="パスワード">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="login()">ログイン</button>
+      <p id="login-error" style="color:#e57373; font-size:13px; margin-top:8px;"></p>
+      <p style="text-align:center; margin-top:16px; font-size:13px; color:#666;">
+        アカウントをお持ちでない方は
+        <a href="#" onclick="showRegister()" style="color:#1a1a1a;">新規登録</a>
+      </p>
     </div>
-    <div class="field-group">
-      <p class="field-label">パスワード</p>
-      <input type="password" id="login-password" placeholder="パスワード">
+
+    <!-- 新規登録フォーム -->
+    <div id="register-form" style="display:none;">
+      <div class="field-group">
+        <p class="field-label">ユーザー名</p>
+        <input type="text" id="reg-username" placeholder="ユーザー名">
+      </div>
+      <div class="field-group">
+        <p class="field-label">パスワード</p>
+        <input type="password" id="reg-password" placeholder="パスワード">
+      </div>
+      <div class="field-group">
+        <p class="field-label">パスワード（確認）</p>
+        <input type="password" id="reg-password2" placeholder="パスワード（確認）">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="register()">登録する</button>
+      <p id="register-error" style="color:#e57373; font-size:13px; margin-top:8px;"></p>
+      <p style="text-align:center; margin-top:16px; font-size:13px; color:#666;">
+        <a href="#" onclick="showLogin()" style="color:#1a1a1a;">ログインに戻る</a>
+      </p>
     </div>
-    <button class="btn btn-primary" style="width:100%" onclick="login()">ログイン</button>
-    <p id="login-error" style="color:#e57373; font-size:13px; margin-top:8px;"></p>
   </div>
 </div>
 
@@ -54,7 +83,6 @@
     <div id="tab-list" class="tab-panel">
       <div class="card">
         <h2>登録一覧</h2>
-        <!-- 管理者用：ユーザー選択 -->
         <div id="admin-user-select" style="display:none; margin-bottom:12px;">
           <p class="field-label">表示するユーザー</p>
           <select id="list-user-select" onchange="loadPeople()" style="padding:6px; border-radius:6px; border:1px solid #ccc;">
@@ -71,8 +99,7 @@
         <h2>写真を登録（管理者）</h2>
         <div class="field-group">
           <p class="field-label">登録先ユーザー</p>
-          <select id="admin-owner-select" style="padding:6px; border-radius:6px; border:1px solid #ccc; margin-bottom:10px;">
-          </select>
+          <select id="admin-owner-select" style="padding:6px; border-radius:6px; border:1px solid #ccc; margin-bottom:10px;"></select>
         </div>
         <div class="form-row">
           <input type="text" id="admin-person-name" placeholder="名前を入力">
