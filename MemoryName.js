@@ -14,6 +14,40 @@ window.onload = async () => {
 // =====================
 // ログイン・ログアウト
 // =====================
+function showRegister() {
+  document.getElementById("login-form").style.display = "none";
+  document.getElementById("register-form").style.display = "block";
+  document.getElementById("login-error").textContent = "";
+}
+
+function showLogin() {
+  document.getElementById("register-form").style.display = "none";
+  document.getElementById("login-form").style.display = "block";
+  document.getElementById("register-error").textContent = "";
+}
+
+async function register() {
+  const username = document.getElementById("reg-username").value;
+  const password = document.getElementById("reg-password").value;
+  const password2 = document.getElementById("reg-password2").value;
+  const errEl = document.getElementById("register-error");
+
+  if (!username || !password) { errEl.textContent = "ユーザー名とパスワードを入力してください"; return; }
+  if (password !== password2) { errEl.textContent = "パスワードが一致しません"; return; }
+
+  const res = await fetch("/api/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+  if (!res.ok) { errEl.textContent = data.error; return; }
+
+  alert("登録しました！ログインしてください");
+  showLogin();
+}
+
 async function login() {
   const username = document.getElementById("login-username").value;
   const password = document.getElementById("login-password").value;
