@@ -111,22 +111,22 @@ function getTabs() {
   const role = currentUser.role;
   if (role === 'admin') {
     return [
-      { id: "admin-register", label: "写真登録" },
-      { id: "list",           label: "登録一覧" },
-      { id: "users",          label: "ユーザー管理" },
-      { id: "records",        label: "記録" },
+      { id: "admin-register", label: "📷 写真登録" },
+      { id: "list",           label: "📋 登録一覧" },
+      { id: "users",          label: "👤 ユーザー管理" },
+      { id: "records",        label: "📊 記録" },
     ];
   } else if (role === 'family') {
     return [
-      { id: "register", label: "写真登録" },
-      { id: "list",     label: "登録一覧" },
+      { id: "register", label: "📷 写真登録" },
+      { id: "list",     label: "📋 登録一覧" },
     ];
   } else {
     return [
-      { id: "game",     label: "ゲーム" },
-      { id: "register", label: "写真登録" },
-      { id: "list",     label: "登録一覧" },
-      { id: "records",  label: "記録" },
+      { id: "game",     label: "🎮 ゲーム" },
+      { id: "register", label: "📷 写真登録" },
+      { id: "list",     label: "📋 登録一覧" },
+      { id: "records",  label: "📊 記録" },
     ];
   }
 }
@@ -171,6 +171,7 @@ async function addPerson() {
   if (res.ok) {
     document.getElementById("person-name").value = "";
     document.getElementById("person-image").value = "";
+    document.getElementById("file-drop-label").textContent = "📁 タップして写真を選ぶ";
   }
 }
 
@@ -191,6 +192,7 @@ async function adminAddPerson() {
   if (res.ok) {
     document.getElementById("admin-person-name").value = "";
     document.getElementById("admin-person-image").value = "";
+    document.getElementById("admin-file-drop-label").textContent = "📁 タップして写真を選ぶ";
   }
 }
 
@@ -207,7 +209,7 @@ async function loadPeople() {
   list.innerHTML = "";
 
   if (people.length === 0) {
-    list.innerHTML = "<p style='color:#999;'>まだ登録されていません</p>";
+    list.innerHTML = "<p class='empty-text'>まだ登録されていません</p>";
     return;
   }
 
@@ -215,7 +217,7 @@ async function loadPeople() {
     const div = document.createElement("div");
     div.className = "person-card";
     div.innerHTML = `
-      <img src="/api/get_image/${p.id}" class="thumb">
+      <img src="/api/get_image/${p.id}" alt="${p.name}">
       <p>${p.name}</p>
       <button class="delete-btn" onclick="deletePerson(${p.id})">削除</button>
     `;
@@ -241,16 +243,17 @@ async function loadUsers() {
   list.innerHTML = "";
 
   const roleLabel = { user: "利用者", admin: "管理者", family: "家族" };
+  const roleClass = { user: "role-user", admin: "role-admin", family: "role-family" };
 
   users.forEach(u => {
     const div = document.createElement("div");
-    div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;";
+    div.className = "user-row";
     div.innerHTML = `
-      <span style="font-size:14px;">
-        <strong>${u.username}</strong>
-        <span style="color:#666; margin-left:6px;">${roleLabel[u.role]}</span>
-        ${u.linked_user_id ? `<span style="color:#aaa; font-size:12px;"> 紐づけID:${u.linked_user_id}</span>` : ""}
-      </span>
+      <div>
+        <span class="user-name">${u.username}</span>
+        <span class="role-badge ${roleClass[u.role]}">${roleLabel[u.role]}</span>
+        ${u.linked_user_id ? `<span style="font-size:12px; color:#999; margin-left:4px;">紐づけID:${u.linked_user_id}</span>` : ""}
+      </div>
       <button class="delete-btn" onclick="deleteUser(${u.id})">削除</button>
     `;
     list.appendChild(div);
@@ -319,8 +322,6 @@ async function loadUserSelectOptions(selectId, includeAll) {
 // =====================
 let gameTargets = [];
 let answerPerson = null;
-let correctCount = 0;
-let totalCount = 0;
 
 async function startMemoryGame() {
   const res = await fetch("/api/get_people");
@@ -335,81 +336,100 @@ async function startMemoryGame() {
   gameTargets = shuffled.slice(0, 2);
   answerPerson = gameTargets[Math.floor(Math.random() * 2)];
 
-  document.getElementById("start-btn").disabled = true;
-  document.getElementById("next-btn").style.display = "none";
-  document.getElementById("memory-result").textContent = "";
-
+  // すべてのゲームフェーズを隠す
+  hideAllPhases();
   showMemorizePhase();
 }
 
+function hideAllPhases() {
+  ['game-start', 'game-memorize', 'game-answer', 'game-correct', 'game-wrong'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+}
+
 function showMemorizePhase() {
-  const grid = document.getElementById("memory-grid");
+  const grid = document.getElementById("memorize-grid");
   grid.innerHTML = "";
-  document.getElementById("memory-question").textContent = "この2人を覚えてください！";
 
   gameTargets.forEach(p => {
     const div = document.createElement("div");
-    div.className = "person-card";
+    div.className = "memory-card";
     div.innerHTML = `
-      <img src="/api/get_image/${p.id}" class="thumb">
-      <p><strong>${p.name}</strong></p>
+      <img src="/api/get_image/${p.id}" alt="${p.name}">
+      <p class="card-person-name">${p.name}</p>
     `;
     grid.appendChild(div);
   });
 
+  document.getElementById("game-memorize").style.display = "block";
+
   let sec = 5;
-  document.getElementById("memory-countdown").textContent = `${sec} 秒後に出題します`;
+  const countEl = document.getElementById("memory-countdown");
+  countEl.textContent = sec;
 
   const timer = setInterval(() => {
     sec--;
     if (sec > 0) {
-      document.getElementById("memory-countdown").textContent = `${sec} 秒後に出題します`;
+      countEl.textContent = sec;
     } else {
       clearInterval(timer);
-      document.getElementById("memory-countdown").textContent = "";
+      countEl.textContent = "";
+      document.getElementById("game-memorize").style.display = "none";
       showAnswerPhase();
     }
   }, 1000);
 }
 
 function showAnswerPhase() {
-  document.getElementById("memory-question").textContent = `「${answerPerson.name}」はどっち？`;
-  const grid = document.getElementById("memory-grid");
+  document.getElementById("answer-question").textContent = `「${answerPerson.name}」はどっち？`;
+  const grid = document.getElementById("answer-grid");
   grid.innerHTML = "";
 
   [...gameTargets].sort(() => Math.random() - 0.5).forEach(p => {
-    const img = document.createElement("img");
-    img.src = `/api/get_image/${p.id}`;
-    img.className = "thumb game-thumb";
-    img.onclick = () => checkAnswer(p.id);
-    grid.appendChild(img);
+    const div = document.createElement("div");
+    div.className = "answer-card";
+    div.innerHTML = `<img src="/api/get_image/${p.id}" alt="">`;
+    div.onclick = () => checkAnswer(p);
+    grid.appendChild(div);
   });
+
+  document.getElementById("game-answer").style.display = "block";
 }
 
-async function checkAnswer(id) {
-  document.querySelectorAll(".game-thumb").forEach(img => img.onclick = null);
-  totalCount++;
+async function checkAnswer(chosen) {
+  // クリック無効化
+  document.querySelectorAll(".answer-card").forEach(c => c.onclick = null);
 
-  const result = document.getElementById("memory-result");
-  if (id === answerPerson.id) {
-    correctCount++;
-    result.textContent = "正解！🎉";
-    result.style.color = "green";
-    document.getElementById("next-btn").style.display = "inline-block";
-  } else {
-    result.textContent = `不正解… 正解は「${answerPerson.name}」でした`;
-    result.style.color = "red";
-    document.getElementById("start-btn").disabled = false;
-  }
+  const isCorrect = chosen.id === answerPerson.id;
 
-  document.getElementById("memory-question").textContent = "";
-
-  // 記録を保存
+  // 記録保存
   await fetch("/api/save_record", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ correct: id === answerPerson.id ? 1 : 0, total: 1 })
+    body: JSON.stringify({ correct: isCorrect ? 1 : 0, total: 1 })
   });
+
+  hideAllPhases();
+
+  if (isCorrect) {
+    // 正解画面
+    document.getElementById("correct-photo").src = `/api/get_image/${answerPerson.id}`;
+    document.getElementById("correct-photo").alt = answerPerson.name;
+    document.getElementById("correct-name").textContent = answerPerson.name;
+    document.getElementById("correct-photo-label").textContent = `「${answerPerson.name}」`;
+    document.getElementById("correct-detail").textContent = `正解！「${answerPerson.name}」さんを選びました。`;
+    document.getElementById("game-correct").style.display = "block";
+  } else {
+    // 不正解画面
+    document.getElementById("wrong-chosen-photo").src = `/api/get_image/${chosen.id}`;
+    document.getElementById("wrong-chosen-name").textContent = chosen.name || "？";
+
+    const correct = gameTargets.find(p => p.id === answerPerson.id);
+    document.getElementById("wrong-correct-photo").src = `/api/get_image/${answerPerson.id}`;
+    document.getElementById("wrong-correct-name").textContent = answerPerson.name;
+
+    document.getElementById("game-wrong").style.display = "block";
+  }
 }
 
 // =====================
@@ -421,27 +441,27 @@ async function loadRecords() {
   const list = document.getElementById("records-list");
 
   if (records.length === 0) {
-    list.innerHTML = "<p style='color:#999;'>記録がありません</p>";
+    list.innerHTML = "<p class='empty-text'>記録がありません</p>";
     return;
   }
 
-  let html = `<table style="width:100%; border-collapse:collapse; font-size:14px;">
+  let html = `<table class="records-table">
     <thead>
-      <tr style="border-bottom:2px solid #eee;">
-        ${currentUser.role === 'admin' ? '<th style="text-align:left; padding:6px;">ユーザー</th>' : ""}
-        <th style="text-align:left; padding:6px;">結果</th>
-        <th style="text-align:left; padding:6px;">日時</th>
+      <tr>
+        ${currentUser.role === 'admin' ? '<th>ユーザー</th>' : ""}
+        <th>結果</th>
+        <th>日時</th>
       </tr>
     </thead><tbody>`;
 
   records.forEach(r => {
     const date = new Date(r.played_at).toLocaleString('ja-JP');
-    html += `<tr style="border-bottom:1px solid #f0f0f0;">
-      ${currentUser.role === 'admin' ? `<td style="padding:6px;">${r.username}</td>` : ""}
-      <td style="padding:6px; color:${r.correct ? 'green' : '#e57373'}">
+    html += `<tr>
+      ${currentUser.role === 'admin' ? `<td>${r.username}</td>` : ""}
+      <td class="${r.correct ? 'record-correct' : 'record-wrong'}">
         ${r.correct ? "正解 ✓" : "不正解 ✗"}
       </td>
-      <td style="padding:6px; color:#999;">${date}</td>
+      <td class="record-date">${date}</td>
     </tr>`;
   });
 
